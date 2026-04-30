@@ -13,7 +13,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-
       - name: Godot Export
         id: export
         uses: firebelley/godot-export@v7.0.0
