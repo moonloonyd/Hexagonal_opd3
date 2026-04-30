@@ -1,33 +1,32 @@
-name: godot-ci
-on:
-  push:
-    branches: [ main ]
+name: "godot-ci export"
+on: push
+
 env:
   GODOT_VERSION: 4.6.2
-jobs:
-  export-game:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    name: Export game
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+  EXPORT_NAME: test-project
+  PROJECT_PATH: test-project
 
-      - name: Godot Export
-        id: export
-        uses: firebelley/godot-export@v7.0.0
+jobs:
+  export-linux:
+    name: Linux Export
+    runs-on: ubuntu-22.04
+    container:
+      image: barichello/godot-ci:4.6.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
-          godot_export_download_url: https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
-          relative_project_path: ./
-          cache: true
-        env:
-          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
-      - name: create release
-        uses: ncipollo/release-action@v1.18.0
+          lfs: true
+      - name: Setup
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+      - name: Linux Build
+        run: |
+          mkdir -v -p build/linux
+          cd $PROJECT_PATH
+          godot --headless --verbose --export-release "Linux" ../build/linux/$EXPORT_NAME.x86_64
+      - name: Upload Artifact
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
         with:
-          token: ${{ secrets.GH_TOKEN }}
-          generateReleaseNotes: true
-          tag: ${{ github.ref_name }}
-          artifacts: ${{ steps.export.outputs.archive_directory }}/*
+          name: linux
+          path: build/linux
